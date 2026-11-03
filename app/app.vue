@@ -1,31 +1,49 @@
 <template>
-  <div style="padding: 20px;">
-    <h1>My POS System Checkout</h1>
-    <p>Click the button below to test the Paystack integration.</p>
+  <div style="padding: 20px; font-family: sans-serif;">
+    <h1>AmiriShop Checkout</h1>
     
-    <!-- This is the button the customer clicks -->
-    <button @click="payWithPaystack" style="padding: 12px 20px; background: #09A5DB; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer;">
-      Pay KSh 1,250 with Paystack
-    </button>
+    <!-- Simple Cart Display -->
+    <div style="border: 1px solid #ccc; padding: 20px; border-radius: 8px; max-width: 400px;">
+      <h2>Shopping Cart</h2>
+      <p>Claw Hammer (KSh 850) x 1</p>
+      <p>Paint Brush Set (KSh 350) x 1</p>
+      <hr />
+      <h3>Total: KSh 1,200</h3>
+
+      <!-- Customer Details -->
+      <input v-model="email" type="email" placeholder="Email (required for Paystack)" style="display: block; width: 100%; padding: 8px; margin-bottom: 10px;" />
+      
+      <button @click="payWithPaystack" style="background-color: #f59e0b; color: white; padding: 12px; border: none; border-radius: 4px; width: 100%; cursor: pointer; font-weight: bold;">
+        Pay with Paystack
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-const config = useRuntimeConfig()
+import { ref } from 'vue'
+
+declare const PaystackPop: any; // Tells TypeScript to ignore the global script
+
+const email = ref('')
 
 const payWithPaystack = async () => {
+  if (!email.value) {
+    alert('Please enter an email address for the receipt.')
+    return
+  }
+
   try {
-    // 1. Ask your secure backend to initialize the payment
+    // 1. Initialize payment with backend
     const response = await $fetch('/api/initialize-payment', {
       method: 'POST',
       body: {
-        email: 'customer@example.com', // You should replace this with a real input later
-        amount: 1250 // The amount in KSh
+        email: email.value,
+        amount: 1200 // Your total amount
       }
     })
 
-    // 2. Open the Paystack Popup using the secure access code
-    // @ts-ignore (This ignores the TypeScript error since Paystack is loaded globally)
+    // 2. Open the Paystack Popup
     const paystack = new PaystackPop()
     
     paystack.resumeTransaction(response.data.access_code, {
@@ -36,10 +54,9 @@ const payWithPaystack = async () => {
         console.log('Customer closed the payment window')
       }
     })
-
   } catch (error) {
-    console.error('Error initializing payment:', error)
-    alert('Failed to start payment. Please try again.')
+    console.error('Payment initialization failed:', error)
+    alert('Failed to start payment. Check your console.')
   }
 }
 </script>
